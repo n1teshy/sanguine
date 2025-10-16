@@ -65,7 +65,7 @@ Simple search:
 sanguine search "user authentication"
 ```
 
-Interactive search mode:
+Interactive search mode, use this when multiple search calls are needed:
 
 ```bash
 sanguine search --interactive
