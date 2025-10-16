@@ -229,7 +229,7 @@ def search(
             if id_to_type[obj.type] == c.ENTITY_FUNCTION
             else Fore.BLUE
         )
-        line = f"  {color}↳ {obj.id}. {obj.name}{Style.RESET_ALL}"
+        line = f"  {color}↳ {obj.name}{Style.RESET_ALL}"
         if show_score:
             line += f" ({score:.2f})"
         print(line)
