@@ -27,7 +27,7 @@ def fts_add_symbol(path: str, type: int, name: str) -> Optional[CodeEntity]:
             (CodeEntity.file == path)
             & (CodeEntity.name == name)
             & CodeEntity.type
-            == type_to_id[type]
+            == type
         )
         .exists()
     )
