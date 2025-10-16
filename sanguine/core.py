@@ -98,13 +98,6 @@ def index_file(file: str):
 
 
 def index_all_files():
-    if not is_repo():
-        print(
-            f"{Fore.RED}Error: not a git repository.{Style.RESET_ALL}",
-            file=sys.stderr,
-        )
-        return
-
     cwd = os.getcwd()
     ignore_file = os.path.join(cwd, ".gitignore")
     patterns = []
