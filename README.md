@@ -2,6 +2,8 @@
 
 **Keep it D.R.Y with Sanguine** - An automated code indexing and semantic search tool for your codebase.
 
+You know when you have to write code that you vaguely remember having written somewhere before? It's annoying to have to look into dozens of files to find a function, I have gone through it, that's why I made this contraption.
+
 Sanguine is a CLI tool that automatically indexes definitions from your code repositories and lets you search for them later. It integrates seamlessly with Git to automatically index code changes on every commit, making it easy to search and navigate your codebase.
 
 ## Features

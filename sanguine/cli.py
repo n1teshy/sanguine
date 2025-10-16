@@ -91,6 +91,14 @@ def main():
 
     subparsers.add_parser("refresh", help="Refresh the embedding index")
 
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version=f"%(prog)s {meta.version}",
+        help="Show version and exit",
+    )
+
     args = parser.parse_args(sys.argv[1:] or ["-h"])
 
     # --- imports here, so '--help' doesn't do any heavy-lifting ---
