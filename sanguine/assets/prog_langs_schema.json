@@ -1,0 +1,112 @@
+{
+    "python": {
+        "function": "function_definition",
+        "class": "class_definition",
+        "identifier": "identifier"
+    },
+    "java": {
+        "function": "method_declaration",
+        "class": "class_declaration",
+        "identifier": "identifier"
+    },
+    "javascript": {
+        "function": "function_declaration",
+        "class": "class_declaration",
+        "identifier": "identifier"
+    },
+    "typescript": {
+        "function": "function_declaration",
+        "class": "class_declaration",
+        "identifier": "identifier"
+    },
+    "cpp": {
+        "function": "function_definition",
+        "class": "class_specifier",
+        "identifier": "identifier"
+    },
+    "c": {
+        "function": "function_definition",
+        "class": "struct_specifier",
+        "identifier": "identifier"
+    },
+    "csharp": {
+        "function": "method_declaration",
+        "class": "class_declaration",
+        "identifier": "identifier"
+    },
+    "go": {
+        "function": "function_declaration",
+        "class": "type_declaration",
+        "identifier": "identifier"
+    },
+    "ruby": {
+        "function": "method",
+        "class": "class",
+        "identifier": "identifier"
+    },
+    "php": {
+        "function": "function_definition",
+        "class": "class_declaration",
+        "identifier": "name"
+    },
+    "swift": {
+        "function": "function_declaration",
+        "class": "class_declaration",
+        "identifier": "simple_identifier"
+    },
+    "kotlin": {
+        "function": "function_declaration",
+        "class": "class_declaration",
+        "identifier": "simple_identifier"
+    },
+    "scala": {
+        "function": "function_definition",
+        "class": "class_definition",
+        "identifier": "identifier"
+    },
+    "r": {
+        "function": "function_definition",
+        "class": "setClass",
+        "identifier": "identifier"
+    },
+    "perl": {
+        "function": "subroutine_declaration",
+        "class": "package_statement",
+        "identifier": "identifier"
+    },
+    "lua": {
+        "function": "function_declaration",
+        "class": "assignment_statement",
+        "identifier": "identifier"
+    },
+    "dart": {
+        "function": "function_signature",
+        "class": "class_definition",
+        "identifier": "identifier"
+    },
+    "elixir": {
+        "function": "call",
+        "class": "call",
+        "identifier": "identifier"
+    },
+    "clojure": {
+        "function": "list_lit",
+        "class": "list_lit",
+        "identifier": "sym_lit"
+    },
+    "rust": {
+        "function": "function_item",
+        "class": "struct_item",
+        "identifier": "identifier"
+    },
+    "haskell": {
+        "function": "function_declaration",
+        "class": "class_declaration",
+        "identifier": "variable"
+    },
+    "julia": {
+        "function": "function_definition",
+        "class": "struct_definition",
+        "identifier": "identifier"
+    }
+}

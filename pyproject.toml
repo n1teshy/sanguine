@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sanguine"
+version = "1.0.0"
+description = "Semantic code indexing tool"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    {name = "Nitesh Yadav", email = "nitesh.txt@gmail.com"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "peewee",
+    "tree_sitter_language_pack",
+    "colorama",
+    "pathspec",
+    "tqdm",
+    "appdirs",
+    "hnswlib",
+    "sentence_transformers"
+]
+
+[project.urls]
+Homepage = "https://github.com/n1teshy/sanguine"
+Repository = "https://github.com/n1teshy/sanguine"
+Issues = "https://github.com/n1teshy/sanguine/issues"
+
+[project.scripts]
+sanguine = "sanguine.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sanguine*"]
+
+[tool.setuptools.package-data]
+sanguine = ["assets/*.json"]
