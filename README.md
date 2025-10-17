@@ -1,6 +1,6 @@
 # Sanguine
 
-**Keep it D.R.Y with Sanguine** - An automated code indexing and semantic search tool for your codebase.
+![Demo Image](https://raw.githubusercontent.com/n1teshy/sanguine/refs/heads/main/images/1.png)
 
 You know when you have to write code that you vaguely remember having written somewhere before? It's annoying to have to look into dozens of files to find a function, I have gone through it, that's why I made this contraption.
 

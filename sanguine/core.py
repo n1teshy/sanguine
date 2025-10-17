@@ -211,11 +211,13 @@ def search(
         print("No matches found.")
         return
 
-    last_file = results[0][0].file
+    last_file = None
     for obj, score in results:
         if obj.file != last_file:
-            print()
-            print(f"{Fore.CYAN}{obj.file}{Style.RESET_ALL}")
+            filename = f"{Fore.CYAN}{obj.file}{Style.RESET_ALL}"
+            if last_file is not None:
+                filename = "\n" + filename
+            print(filename)
 
         color = (
             Fore.GREEN
