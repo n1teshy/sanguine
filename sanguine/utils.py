@@ -18,3 +18,7 @@ ext_to_lang = json.load(
 
 def is_repo():
     return os.path.exists(".git")
+
+
+def norm_path(path: str) -> str:
+    return os.path.abspath(os.path.expanduser(path))

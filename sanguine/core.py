@@ -23,7 +23,7 @@ from sanguine.db.fts import (
 from sanguine.db.hnsw import hnsw_add_symbol, hnsw_remove_symbol, hnsw_search
 from sanguine.parser import extract_symbols
 from sanguine.state import get_staleness, update_staleness
-from sanguine.utils import ext_to_lang, is_repo
+from sanguine.utils import ext_to_lang, is_repo, norm_path
 
 
 def index_diff(file_diff: dict[str, tuple[str, Optional[str]]]):
@@ -37,7 +37,7 @@ def index_diff(file_diff: dict[str, tuple[str, Optional[str]]]):
         if ext not in ext_to_lang:
             continue
 
-        file_path = os.path.abspath(file)
+        file_path = norm_path(file)
         lang = ext_to_lang[ext]
 
         added_symbols = extract_symbols(added_lines, lang)
@@ -143,7 +143,7 @@ def search(
 ):
     conditions = [CodeEntity.name.contains(query)]
     if path is not None:
-        path = os.path.abspath(path)
+        path = norm_path(path)
         conditions.append(CodeEntity.file.startswith(path))
     if type is not None:
         type = type_to_id[type]
@@ -243,7 +243,7 @@ def delete(
     if name:
         conditions.append(CodeEntity.name.startswith(name))
     if path:
-        path = os.path.abspath(path)
+        path = norm_path(path)
         conditions.append(CodeEntity.file.startswith(path))
     if type:
         conditions.append(CodeEntity.type == type_to_id[type])
