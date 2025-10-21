@@ -24,6 +24,12 @@ Install Sanguine using pip:
 pip install sanguine
 ```
 
+Or if you have a CUDA-capable GPU:
+
+```bash
+pip install sanguine[gpu]
+```
+
 Or install from source:
 
 ```bash
@@ -174,6 +180,14 @@ Refresh the HNSW vector index. Use this when you see warnings about stale entrie
 
 ```bash
 sanguine refresh
+```
+
+#### `using GPU`
+Use your GPU to acclerate embedding model inference (faster index/search/delete/refresh). `--cuda` flag works for every command other other than `install`, `uninstall`.
+
+```bash
+sanguine index --all-files --cuda
+sanguine search "setup" --cuda
 ```
 
 ## How It Works
