@@ -6,6 +6,18 @@ import sanguine.meta as meta
 
 
 def main():
+    global_parser = argparse.ArgumentParser(add_help=False)
+    global_parser.add_argument(
+        "--cuda", action="store_true", help="Use GPU to run embedding model"
+    )
+    global_parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version=f"%(prog)s {meta.version}",
+        help="Show version and exit",
+    )
+
     parser = argparse.ArgumentParser(
         prog=meta.name,
         description=f"Keep it D.R.Y with {meta.name}.",
@@ -13,16 +25,23 @@ def main():
             prog, max_help_position=25, width=120
         ),
         usage=argparse.SUPPRESS,
+        parents=[global_parser],
     )
 
     subparsers = parser.add_subparsers(
         dest="command", help="Available commands"
     )
 
-    subparsers.add_parser("install", help="Install post-commit hook")
-    subparsers.add_parser("uninstall", help="Uninstall post-commit hook")
+    subparsers.add_parser(
+        "install", help="Install post-commit hook", parents=[global_parser]
+    )
+    subparsers.add_parser(
+        "uninstall", help="Uninstall post-commit hook", parents=[global_parser]
+    )
 
-    index_parser = subparsers.add_parser("index", help="Index code")
+    index_parser = subparsers.add_parser(
+        "index", help="Index code", parents=[global_parser]
+    )
     index_parser.add_argument(
         "--commit-id",
         "-c",
@@ -42,7 +61,9 @@ def main():
         help="Index all files in current folder not ignored by .gitignore",
     )
 
-    search_parser = subparsers.add_parser("search", help="Search indexed code")
+    search_parser = subparsers.add_parser(
+        "search", help="Search indexed code", parents=[global_parser]
+    )
     search_parser.add_argument(
         "text", type=str, nargs="?", help="Search query"
     )
@@ -67,7 +88,7 @@ def main():
     )
 
     delete_parser = subparsers.add_parser(
-        "delete", help="Delete indexed entities"
+        "delete", help="Delete indexed entities", parents=[global_parser]
     )
     delete_parser.add_argument(
         "--name",
@@ -89,28 +110,19 @@ def main():
         "--yes", "-y", type=str, help="Delete without asking"
     )
 
-    subparsers.add_parser("refresh", help="Refresh the embedding index")
-
-    parser.add_argument(
-        "--version",
-        "-v",
-        action="version",
-        version=f"%(prog)s {meta.version}",
-        help="Show version and exit",
+    subparsers.add_parser(
+        "refresh", help="Refresh the embedding index", parents=[global_parser]
     )
 
     args = parser.parse_args(sys.argv[1:] or ["-h"])
 
     # --- imports here, so '--help' doesn't do any heavy-lifting ---
-
     from colorama import Fore, Style
     from colorama import init as colorama_init
 
     from sanguine.db import db
     from sanguine.db.fts import CodeEntity
     from sanguine.install_uninstall import install, uninstall
-
-    # ----
 
     colorama_init(autoreset=True)
 
@@ -125,14 +137,16 @@ def main():
         process_commit,
         search,
     )
-    from sanguine.db.hnsw import refresh_hnsw_index, save_index
+    from sanguine.db.hnsw import init_embedder, refresh_hnsw_index, save_index
 
-    # ---
+    init_embedder(use_cuda=args.cuda)
 
     if args.command == "install":
         install()
+
     elif args.command == "uninstall":
         uninstall()
+
     elif args.command == "index":
         if args.file:
             index_file(args.file)
@@ -149,7 +163,6 @@ def main():
                 sys.exit(1)
             search(args.text, k=args.count, path=args.path, type=args.type)
             return
-
         print("Interactive search. Type ':q' to quit.")
         while True:
             cmd = input(">> ").strip()
@@ -169,7 +182,6 @@ def main():
                 f"{Fore.RED}Error: You must provide at least --name or --path for deletion.{Style.RESET_ALL}"
             )
             sys.exit(1)
-
         delete(name=args.name, path=args.path, type=args.type, force=args.yes)
 
     elif args.command == "refresh":

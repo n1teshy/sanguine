@@ -1,13 +1,17 @@
 import os
+from typing import Union
 
 import hnswlib
-from sentence_transformers import SentenceTransformer
+import numpy as np
+from colorama import Fore, Style
+from fastembed import TextEmbedding
+from tqdm import tqdm
 
 from sanguine.db.fts import CodeEntity
 from sanguine.utils import app_dir
 
 dim = 384
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model: Union[None, TextEmbedding] = None
 index_file = os.path.join(app_dir, "hnsw.bin")
 
 if os.path.exists(index_file):
@@ -20,8 +24,25 @@ else:
     index.init_index(max_elements=max_elements, M=64)
 
 
+def init_embedder(use_cuda: bool):
+    global model
+
+    providers = ["CPUExecutionProvider"]
+    if use_cuda:
+        providers.append("CUDAExecutionProvider")
+
+    model = TextEmbedding(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        providers=providers,
+    )
+
+
+def embed(texts: str) -> list[np.ndarray]:
+    return list(model.embed(texts))
+
+
 def hnsw_add_symbol(texts: list[str], ids: list[int]):
-    embeddings = model.encode(texts, convert_to_numpy=True)
+    embeddings = embed(texts)
     new_count = index.get_current_count() + len(ids)
     if new_count > index.get_max_elements():
         index.resize_index(max(new_count, index.get_max_elements() * 2))
@@ -33,17 +54,13 @@ def hnsw_search(query: str, k: int = 10) -> tuple[list[int], list[float]]:
         return []
 
     index.set_ef(max(50, k * 2))
-    query_vec = model.encode([query], convert_to_numpy=True)
+    query_vec = embed([query])
     labels, distances = index.knn_query(query_vec, k=k)
     return labels[0].tolist(), [1 - d for d in distances[0].tolist()]
 
 
 def hnsw_remove_symbol(id: int):
     index.mark_deleted(id)
-
-
-from colorama import Fore, Style
-from tqdm import tqdm
 
 
 def refresh_hnsw_index(batch_size: int = 512):
@@ -67,13 +84,13 @@ def refresh_hnsw_index(batch_size: int = 512):
         batch_texts.append(entity.name)
 
         if len(batch_ids) >= batch_size:
-            embeddings = model.encode(batch_texts, convert_to_numpy=True)
+            embeddings = embed(batch_texts)
             index.add_items(embeddings, batch_ids)
             batch_ids.clear()
             batch_texts.clear()
 
     if batch_ids:
-        embeddings = model.encode(batch_texts, convert_to_numpy=True)
+        embeddings = embed(batch_texts)
         index.add_items(embeddings, batch_ids)
 
     save_index()
