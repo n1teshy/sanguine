@@ -1,0 +1,1 @@
+- "--path" filter doesn't work, the generic HNSW results mess up the targeted results from FTS
