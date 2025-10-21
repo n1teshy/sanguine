@@ -1,1 +1,5 @@
-- "--path" filter doesn't work, the generic HNSW results mess up the targeted results from FTS
+- "--path" filter doesn't work, the generic(non targeted) HNSW results mess up the targeted results from FTS
+  - if path is not None:
+    - get_many_FTS_results()
+    - get_HNSW_scores_for_FTS_results()
+    - score them
