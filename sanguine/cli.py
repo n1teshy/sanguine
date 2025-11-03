@@ -137,7 +137,11 @@ def main():
         process_commit,
         search,
     )
-    from sanguine.db.hnsw import init_embedder, refresh_hnsw_index, save_index
+    from sanguine.db.hnsw import (
+        init_embedder,
+        refresh_hnsw_index,
+        save_indices,
+    )
 
     init_embedder(use_cuda=args.cuda)
 
@@ -154,7 +158,8 @@ def main():
             index_all_files()
         else:
             process_commit(args.commit_id)
-        save_index()
+
+        save_indices()
 
     elif args.command == "search":
         if not args.interactive:
@@ -183,6 +188,7 @@ def main():
             )
             sys.exit(1)
         delete(name=args.name, path=args.path, type=args.type, force=args.yes)
+        save_indices()
 
     elif args.command == "refresh":
         refresh_hnsw_index()

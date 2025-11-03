@@ -20,13 +20,24 @@ from sanguine.db.fts import (
     id_to_type,
     type_to_id,
 )
-from sanguine.db.hnsw import hnsw_add_symbol, hnsw_remove_symbol, hnsw_search
+from sanguine.db.hnsw import (
+    find_apt_hnsw_index,
+    hnsw_add_symbol,
+    hnsw_remove_symbol,
+    hnsw_search,
+    make_hnsw_index,
+)
+from sanguine.db.hnsw import indices as hnsw_indices
 from sanguine.parser import extract_symbols
 from sanguine.state import get_staleness, update_staleness
-from sanguine.utils import ext_to_lang, is_repo
+from sanguine.utils import ext_to_lang, is_repo, normalize_path
 
 
-def index_diff(file_diff: dict[str, tuple[str, Optional[str]]]):
+def index_diff(file_diff: dict[str, tuple[str, Optional[str]]], dir: str):
+    dir = normalize_path(dir)
+    hnsw_index = find_apt_hnsw_index(dir)
+    hnsw_index = hnsw_index or make_hnsw_index(dir)
+
     for file, (added_lines, removed_lines) in tqdm(
         file_diff.items(),
         total=len(file_diff),
@@ -37,7 +48,7 @@ def index_diff(file_diff: dict[str, tuple[str, Optional[str]]]):
         if ext not in ext_to_lang:
             continue
 
-        file_path = os.path.abspath(file)
+        file_path = normalize_path(file)
         lang = ext_to_lang[ext]
 
         added_symbols = extract_symbols(added_lines, lang)
@@ -56,7 +67,7 @@ def index_diff(file_diff: dict[str, tuple[str, Optional[str]]]):
                         type=type_to_id[entity_type],
                         name=symbol_name,
                     )
-                    hnsw_add_symbol([symbol_name], [o.id])
+                    hnsw_add_symbol([symbol_name], [o.id], hnsw_index)
 
                 for symbol_name in removed_symbols[field_name]:
                     ids = fts_remove_symbol(
@@ -78,7 +89,7 @@ def process_commit(commit_id: Optional[str] = None):
     try:
         commit = commit_id or git.last_commit()
         file_to_diff = git.commit_diff(commit)
-        index_diff(file_to_diff)
+        index_diff(file_to_diff, os.getcwd())
     except subprocess.CalledProcessError:
         print(
             f"{Fore.RED}Invalid commit ID{Style.RESET_ALL}",
@@ -94,7 +105,7 @@ def index_file(file: str):
         )
         return
     with open(file, encoding="utf-8") as f:
-        index_diff({file: (f.read(), "")})
+        index_diff({file: (f.read(), "")}, os.path.dirname(file))
 
 
 def index_all_files():
@@ -131,7 +142,7 @@ def index_all_files():
         print(f"{Fore.YELLOW}No indexable files found.{Style.RESET_ALL}")
         return
 
-    index_diff(file_diff)
+    index_diff(file_diff, cwd)
 
 
 def search(
@@ -143,7 +154,7 @@ def search(
 ):
     conditions = [CodeEntity.name.contains(query)]
     if path is not None:
-        path = os.path.abspath(path)
+        path = normalize_path(path)
         conditions.append(CodeEntity.file.startswith(path))
     if type is not None:
         type = type_to_id[type]
@@ -154,7 +165,23 @@ def search(
     db_map = {o.id: o for o in db_objects}
 
     total_hnsw_no, stale_hnsw_no = 0, 0
-    sim_ids, sim_scores = hnsw_search(query, k=k)
+    sim_ids, sim_scores = [], []
+
+    if path is not None:
+        # use the parent directory's index
+        matching_index = find_apt_hnsw_index(path)
+        if matching_index is not None:
+            sim_ids, sim_scores = hnsw_search(query, matching_index, k=k)
+    else:
+        # use all indices
+        for _, index in hnsw_indices.items():
+            _sim_ids, _sim_scores = hnsw_search(query, index, k=k)
+            sim_ids.extend(_sim_ids), sim_scores.extend(_sim_scores)
+            scored_ids = sorted(
+                zip(sim_ids, sim_scores), key=lambda x: x[1], reverse=True
+            )[:k]
+            sim_ids, sim_scores = [list(x) for x in zip(*scored_ids)]
+
     total_hnsw_no += len(sim_ids)
     sim_score_map = dict(zip(sim_ids, sim_scores))
     sim_map = {
@@ -177,8 +204,9 @@ def search(
             sim_score_map[s_id] = score
             sim_map[s_id] = s_o
 
-    update_staleness(total_hnsw_no, stale_hnsw_no)
-    staleness = get_staleness()
+    if total_hnsw_no > 0:
+        update_staleness(total_hnsw_no, stale_hnsw_no)
+        staleness = get_staleness()
 
     if staleness > 0.5:
         print(
@@ -243,7 +271,7 @@ def delete(
     if name:
         conditions.append(CodeEntity.name.startswith(name))
     if path:
-        path = os.path.abspath(path)
+        path = normalize_path(path)
         conditions.append(CodeEntity.file.startswith(path))
     if type:
         conditions.append(CodeEntity.type == type_to_id[type])

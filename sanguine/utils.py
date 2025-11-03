@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 
@@ -18,3 +19,16 @@ ext_to_lang = json.load(
 
 def is_repo():
     return os.path.exists(".git")
+
+
+def normalize_path(path: str) -> str:
+    path = os.path.abspath(os.path.expanduser(path))
+    return path.replace(os.sep, "/").rstrip("/")
+
+
+def encode_path(path: str) -> str:
+    return base64.urlsafe_b64encode(path.encode()).decode()
+
+
+def decode_path(name: str) -> str:
+    return base64.urlsafe_b64decode(name.encode()).decode()
