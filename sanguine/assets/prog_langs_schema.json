@@ -1,112 +1,206 @@
 {
-    "python": {
-        "function": "function_definition",
-        "class": "class_definition",
-        "identifier": "identifier"
-    },
-    "java": {
-        "function": "method_declaration",
-        "class": "class_declaration",
-        "identifier": "identifier"
-    },
-    "javascript": {
-        "function": "function_declaration",
-        "class": "class_declaration",
-        "identifier": "identifier"
-    },
-    "typescript": {
-        "function": "function_declaration",
-        "class": "class_declaration",
-        "identifier": "identifier"
-    },
-    "cpp": {
-        "function": "function_definition",
-        "class": "class_specifier",
-        "identifier": "identifier"
-    },
-    "c": {
-        "function": "function_definition",
-        "class": "struct_specifier",
-        "identifier": "identifier"
-    },
-    "csharp": {
-        "function": "method_declaration",
-        "class": "class_declaration",
-        "identifier": "identifier"
-    },
-    "go": {
-        "function": "function_declaration",
-        "class": "type_declaration",
-        "identifier": "identifier"
-    },
-    "ruby": {
-        "function": "method",
-        "class": "class",
-        "identifier": "identifier"
-    },
-    "php": {
-        "function": "function_definition",
-        "class": "class_declaration",
-        "identifier": "name"
-    },
-    "swift": {
-        "function": "function_declaration",
-        "class": "class_declaration",
-        "identifier": "simple_identifier"
-    },
-    "kotlin": {
-        "function": "function_declaration",
-        "class": "class_declaration",
-        "identifier": "simple_identifier"
-    },
-    "scala": {
-        "function": "function_definition",
-        "class": "class_definition",
-        "identifier": "identifier"
-    },
-    "r": {
-        "function": "function_definition",
-        "class": "setClass",
-        "identifier": "identifier"
-    },
-    "perl": {
-        "function": "subroutine_declaration",
-        "class": "package_statement",
-        "identifier": "identifier"
-    },
-    "lua": {
-        "function": "function_declaration",
-        "class": "assignment_statement",
-        "identifier": "identifier"
-    },
-    "dart": {
-        "function": "function_signature",
-        "class": "class_definition",
-        "identifier": "identifier"
-    },
-    "elixir": {
-        "function": "call",
-        "class": "call",
-        "identifier": "identifier"
-    },
-    "clojure": {
-        "function": "list_lit",
-        "class": "list_lit",
-        "identifier": "sym_lit"
-    },
-    "rust": {
-        "function": "function_item",
-        "class": "struct_item",
-        "identifier": "identifier"
-    },
-    "haskell": {
-        "function": "function_declaration",
-        "class": "class_declaration",
-        "identifier": "variable"
-    },
-    "julia": {
-        "function": "function_definition",
-        "class": "struct_definition",
-        "identifier": "identifier"
-    }
+  "python": {
+    "class_paths": [["class_definition", "identifier"]],
+    "function_paths": [["function_definition", "identifier"]]
+  },
+  "java": {
+    "class_paths": [
+      ["class_declaration", "identifier"],
+      ["interface_declaration", "identifier"],
+      ["enum_declaration", "identifier"]
+    ],
+    "function_paths": [
+      ["method_declaration", "identifier"],
+      ["constructor_declaration", "identifier"]
+    ]
+  },
+  "javascript": {
+    "class_paths": [
+      ["class_declaration", "identifier"],
+      ["class", "identifier"]
+    ],
+    "function_paths": [
+      ["function_declaration", "identifier"],
+      ["method_definition", "property_identifier"],
+      ["function_expression", "identifier"]
+    ]
+  },
+  "typescript": {
+    "class_paths": [
+      ["class_declaration", "type_identifier"],
+      ["enum_declaration", "identifier"],
+      ["class", "type_identifier"]
+    ],
+    "function_paths": [
+      ["function_declaration", "identifier"],
+      ["method_signature", "property_identifier"],
+      ["method_definition", "property_identifier"]
+    ]
+  },
+  "cpp": {
+    "function_paths": [
+      ["function_definition", "function_declarator", "identifier"],
+      ["function_definition", "function_declarator", "field_identifier"],
+      [
+        "function_definition",
+        "reference_declarator",
+        "function_declarator",
+        "field_identifier"
+      ]
+    ],
+    "class_paths": [
+      ["class_specifier", "type_identifier"],
+      ["struct_specifier", "type_identifier"],
+      ["template_declaration", "struct_specifier", "type_identifier"],
+      ["template_declaration", "class_specifier", "type_identifier"],
+      ["declaration", "struct_specifier", "type_identifier"]
+    ]
+  },
+  "c": {
+    "function_paths": [
+      ["function_definition", "function_declarator", "identifier"],
+      [
+        "function_definition",
+        "pointer_declarator",
+        "function_declarator",
+        "identifier"
+      ],
+      ["declaration", "function_declarator", "identifier"]
+    ],
+    "class_paths": [
+      ["type_definition", "type_identifier"],
+      ["type_definition", "struct_specifier", "type_identifier"],
+      ["type_definition", "enum_specifier", "type_identifier"]
+    ]
+  },
+  "csharp": {
+    "class_paths": [
+      ["namespace_declaration", "identifier"],
+      ["enum_declaration", "identifier"],
+      ["interface_declaration", "identifier"],
+      ["struct_declaration", "identifier"],
+      ["delegate_declaration", "identifier"],
+      ["class_declaration", "identifier"]
+    ],
+    "function_paths": [
+      ["method_declaration", "identifier"],
+      ["constructor_declaration", "identifier"]
+    ]
+  },
+  "go": {
+    "class_paths": [
+      ["type_declaration", "type_alias", "type_identifier"],
+      ["type_declaration", "type_spec", "type_identifier"]
+    ],
+    "function_paths": [
+      ["function_declaration", "identifier"],
+      ["method_declaration", "field_identifier"],
+      ["method_elem", "field_identifier"]
+    ]
+  },
+  "ruby": {
+    "class_paths": [
+      ["class", "constant"],
+      ["module", "constant"],
+      ["call", "constant"]
+    ],
+    "function_paths": [
+      ["method", "identifier"],
+      ["singleton_method", "identifier"]
+    ]
+  },
+  "php": {
+    "class_paths": [
+      ["class_declaration", "name"],
+      ["interface_declaration", "name"]
+    ],
+    "function_paths": [
+      ["function_definition", "name"],
+      ["method_declaration", "name"]
+    ]
+  },
+  "swift": {
+    "class_paths": [["class_declaration", "type_identifier"]],
+    "function_paths": [["function_declaration", "simple_identifier"]]
+  },
+  "kotlin": {
+    "class_paths": [
+      ["class_declaration", "type_identifier"],
+      ["object_declaration", "type_identifier"]
+    ],
+    "function_paths": [["function_declaration", "simple_identifier"]]
+  },
+  "scala": {
+    "class_paths": [["class_definition", "identifier"]],
+    "function_paths": [
+      ["function_definition", "identifier"],
+      ["function_declaration", "identifier"]
+    ]
+  },
+  "r": {
+    "class_paths": [
+      ["program", "call", "arguments", "argument", "string", "string_content"]
+    ],
+    "function_paths": [["binary_operator", "identifier"]]
+  },
+  "perl": {
+    "function_paths": [["subroutine_declaration_statement", "bareword"]],
+    "class_paths": [["package_statement", "package_statement"]]
+  },
+  "dart": {
+    "class_paths": [
+      ["class_definition", "identifier"],
+      ["mixin_declaration", "identifier"],
+      ["extension_declaration", "identifier"],
+      ["enum_declaration", "identifier"],
+      ["type_alias", "type_identifier"],
+      ["ERROR", "identifier"],
+      ["constructor_signature", "identifier"]
+    ],
+    "function_paths": [
+      ["function_signature", "identifier"],
+      ["constructor_signature", "identifier"],
+      ["factory_constructor_signature", "identifier"],
+      ["method_signature", "identifier"]
+    ]
+  },
+  "elixir": {
+    "class_paths": [["call", "arguments", "alias"]],
+    "function_paths": [["call", "identifier"]]
+  },
+  "rust": {
+    "class_paths": [
+      ["struct_item", "type_identifier"],
+      ["enum_item", "type_identifier"],
+      ["trait_item", "type_identifier"],
+      ["impl_item", "type_identifier"],
+      ["impl_item", "type_identifier"]
+    ],
+    "function_paths": [
+      ["function_item", "identifier"],
+      ["function_signature_item", "identifier"]
+    ]
+  },
+  "haskell": {
+    "class_paths": [["class", "name"]],
+    "function_paths": [["signature", "variable"]]
+  },
+  "julia": {
+    "class_paths": [
+      ["struct_definition", "type_head", "identifier"],
+      [
+        "struct_definition",
+        "type_head",
+        "parametrized_type_expression",
+        "identifier"
+      ]
+    ],
+    "function_paths": [
+      ["function_definition", "signature", "call_expression", "identifier"]
+    ]
+  },
+  "bash": {
+    "class_paths": [],
+    "function_paths": [["function_definition", "word"]]
+  }
 }
