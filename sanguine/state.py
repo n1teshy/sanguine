@@ -46,4 +46,6 @@ def reset_staleness_metrics():
 
 
 def get_staleness() -> float:
+    if state[HNSW_TOTAL_ENCOUNTERS] == 0:
+        return 0
     return state[HNSW_STALE_ENCOUNTERS] / state[HNSW_TOTAL_ENCOUNTERS]

@@ -161,53 +161,64 @@ def search(
         conditions.append(CodeEntity.type == type)
 
     conditions = reduce(lambda x, y: x & y, conditions)
-    db_objects = CodeEntity.select().where(conditions)
-    db_map = {o.id: o for o in db_objects}
+    fts_objects = CodeEntity.select().where(conditions)
+    db_map = {o.id: o for o in fts_objects}
 
-    total_hnsw_no, stale_hnsw_no = 0, 0
+    if path is None:
+        # search all indices
+        searchable_indices = hnsw_indices
+    else:
+        searchable_indices = {path: find_apt_hnsw_index(path)}
+
+    total_hnsw_records, stale_hnsw_records = 0, 0
     sim_ids, sim_scores = [], []
 
-    if path is not None:
-        # use the parent directory's index
-        matching_index = find_apt_hnsw_index(path)
-        if matching_index is not None:
-            sim_ids, sim_scores = hnsw_search(query, matching_index, k=k)
-    else:
-        # use all indices
-        for _, index in hnsw_indices.items():
-            _sim_ids, _sim_scores = hnsw_search(query, index, k=k)
-            sim_ids.extend(_sim_ids), sim_scores.extend(_sim_scores)
+    for _, index in searchable_indices.items():
+        _sim_ids, _sim_scores = hnsw_search(query, index, k=k)
+        sim_ids.extend(_sim_ids), sim_scores.extend(_sim_scores)
+        scored_ids = sorted(
+            zip(sim_ids, sim_scores), key=lambda x: x[1], reverse=True
+        )[:k]
+        sim_ids, sim_scores = [list(x) for x in zip(*scored_ids)]
+
+    total_hnsw_records += len(sim_ids)
+    id_score_map = dict(zip(sim_ids, sim_scores))
+    # non-existent IDs don't appear in 'id_obj_map', not even as None
+    id_obj_map = {
+        o.id: o for o in CodeEntity.select().where(CodeEntity.id.in_(sim_ids))
+    }
+    stale_hnsw_records += len(sim_ids) - len(id_obj_map)
+
+    # NOTE: why this? stale entries from the hnsw index are removed,
+    # might need to get new records from the index to make 'k' records
+    if len(id_obj_map) < k / 2:
+        for _, index in searchable_indices.items():
+            more_ids, more_scores = hnsw_search(query, index, k * 2)
+            sim_ids.extend(more_ids), sim_scores.extend(more_scores)
             scored_ids = sorted(
                 zip(sim_ids, sim_scores), key=lambda x: x[1], reverse=True
             )[:k]
             sim_ids, sim_scores = [list(x) for x in zip(*scored_ids)]
+            _id_obj_map = {
+                o.id: o
+                for o in CodeEntity.select().where(CodeEntity.id.in_(more_ids))
+            }
 
-    total_hnsw_no += len(sim_ids)
-    sim_score_map = dict(zip(sim_ids, sim_scores))
-    sim_map = {
-        o.id: o for o in CodeEntity.select().where(CodeEntity.id.in_(sim_ids))
-    }
-    stale_hnsw_no += len(sim_ids) - len(sim_map)
-    sim_ids = set(sim_ids)
+            for new_sim_id, score in zip(more_ids, more_scores):
+                if new_sim_id in sim_ids:
+                    continue
+                sim_ids.append(new_sim_id)
+                total_hnsw_records += 1
+                if new_sim_id not in _id_obj_map:
+                    stale_hnsw_records += 1
+                    continue
+                id_score_map[new_sim_id] = score
+                id_obj_map[new_sim_id] = _id_obj_map[new_sim_id]
 
-    if len(sim_map) < k / 2:
-        more_ids, more_scores = hnsw_search(query, k=k * 2)
-        for s_id, score in zip(more_ids, more_scores):
-            if s_id in sim_ids:
-                continue
-            total_hnsw_no += 1
-            s_o = CodeEntity.get_or_none(id=s_id)
-            if s_o is None:
-                stale_hnsw_no += 1
-                continue
-            sim_ids.add(s_id)
-            sim_score_map[s_id] = score
-            sim_map[s_id] = s_o
+    if total_hnsw_records > 0:
+        update_staleness(total_hnsw_records, stale_hnsw_records)
 
-    if total_hnsw_no > 0:
-        update_staleness(total_hnsw_no, stale_hnsw_no)
-        staleness = get_staleness()
-
+    staleness = get_staleness()
     if staleness > 0.5:
         print(
             f"{Fore.YELLOW}HNSW needs index refreshing, >50% entries are stale. Bordering uselessness.{Style.RESET_ALL}"
@@ -219,13 +230,15 @@ def search(
     if staleness > 0.3:
         print(f'run "{meta.name} refresh" to refresh\n')
 
-    all_ids = list(sim_ids) + [o.id for o in db_objects if o.id not in sim_ids]
+    all_ids = list(sim_ids) + [
+        o.id for o in fts_objects if o.id not in sim_ids
+    ]
     results = []
     for oid in all_ids:
-        obj = sim_map.get(oid) or db_map.get(oid)
+        obj = id_obj_map.get(oid) or db_map.get(oid)
         if obj is None or (type is not None and obj.type != type):
             continue
-        sim_score = sim_score_map.get(oid, 0)
+        sim_score = id_score_map.get(oid, 0)
         text_score = difflib.SequenceMatcher(
             None, query.lower(), obj.name.lower()
         ).ratio()

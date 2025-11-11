@@ -4,14 +4,14 @@
 
 You know when you have to write code that you vaguely remember having written somewhere before? It's annoying to have to look into dozens of files to find a function, I have gone through it, that's why I made this contraption.
 
-Sanguine is a CLI tool that automatically indexes definitions from your code repositories and lets you search for them later. It integrates seamlessly with Git to automatically index code changes on every commit, making it easy to search and navigate your codebase.
+Sanguine is a CLI tool that automatically indexes declarations from your code repositories and lets you search for them later. It integrates seamlessly with Git to automatically index code changes on every commit.
 
 ## Features
 
 - 🚀 **Automatic Indexing**: Integrates with Git post-commit hooks to automatically index code changes
-- 🔍 **Smart Search**: Find functions and classes using natural language queries
+- 🔍 **Smart Search**: Find functions and classes using natural language queries (synonyms, short descriptions)
 - 🌐 **Cross-Repository Search**: Search across all your indexed codebases at once, or narrow to specific repositories
-- 📊 **Multi-Language Support**: Works with Python, JavaScript, Java, C/C++, Go, Rust, and more
+- 📊 **Multi-Language Support**: Works with ~all popular programming languages
 - 🎨 **Interactive Mode**: Provides an interactive search interface for exploratory code navigation
 - 🔧 **Flexible Filtering**: Search by name, path, or entity type (function/class)
 - ⚡ **Fast Performance**: Quick search results even in large codebases
@@ -84,6 +84,7 @@ sanguine search --interactive
 ### Commands
 
 #### `install`
+
 Install the post-commit Git hook for automatic indexing.
 
 ```bash
@@ -91,6 +92,7 @@ sanguine install
 ```
 
 #### `uninstall`
+
 Remove the post-commit Git hook.
 
 ```bash
@@ -98,37 +100,45 @@ sanguine uninstall
 ```
 
 #### `index`
+
 Index code from commits, files, or entire repository.
 
 **Index last commit** (default):
+
 ```bash
 sanguine index
 ```
 
 **Index specific commit**:
+
 ```bash
 sanguine index --commit-id abc123
 ```
 
 **Index specific file**:
+
 ```bash
 sanguine index --file src/main.py
 ```
 
 **Index all files** (respects .gitignore):
+
 ```bash
 sanguine index --all-files
 ```
 
 #### `search`
+
 Search indexed code entities (functions and classes).
 
 **Basic search**:
+
 ```bash
 sanguine search "query"
 ```
 
 **Search with options**:
+
 ```bash
 # Limit results
 sanguine search "database" --count 20
@@ -144,6 +154,7 @@ sanguine search "model" --path src/models --type class --count 15
 ```
 
 **Interactive mode**:
+
 ```bash
 sanguine search --interactive
 # In the REPL:
@@ -153,29 +164,35 @@ sanguine search --interactive
 ```
 
 #### `delete`
+
 Delete indexed entities based on filters.
 
 **Delete by name**:
+
 ```bash
 sanguine delete --name "test_"
 ```
 
 **Delete by path**:
+
 ```bash
 sanguine delete --path src/deprecated
 ```
 
 **Delete with type filter**:
+
 ```bash
 sanguine delete --name "old" --type function
 ```
 
 **Force delete without confirmation**:
+
 ```bash
 sanguine delete --name "temp" --yes
 ```
 
 #### `refresh`
+
 Refresh the HNSW vector index. Use this when you see warnings about stale entries.
 
 ```bash
@@ -183,6 +200,7 @@ sanguine refresh
 ```
 
 #### `using GPU`
+
 Use your GPU to acclerate embedding model inference (faster index/search/delete/refresh). `--cuda` flag works for every command other other than `install`, `uninstall`.
 
 ```bash
@@ -211,7 +229,7 @@ Sanguine supports multiple programming languages:
 - Rust
 - Ruby
 - PHP
-- And more...
+- And [more...](https://github.com/n1teshy/sanguine/blob/main/sanguine/assets/ext_to_lang.json)
 
 ## Data Storage
 
@@ -239,6 +257,7 @@ This rebuilds the index and improves search quality.
 ### Large Repositories
 
 For large codebases:
+
 - Initial indexing with `--all-files` may take a few minutes
 - After that, automatic indexing on commits is fast
 - Use path filters (`--path`) to narrow search scope when searching
@@ -250,14 +269,16 @@ For large codebases:
 # Initial setup in a new project
 cd my-project
 sanguine install
+# index all files (if repo has files from previous commits)
 sanguine index --all-files
 
 # Set up other projects too
 cd ../another-project
 sanguine install
+# index all files (if repo has files from previous commits)
 sanguine index --all-files
 
-# Daily usage - automatic indexing on commits
+# Automatic indexing on commits
 git commit -m "Add new feature"
 # Sanguine automatically indexes changes
 
@@ -270,11 +291,11 @@ sanguine search "authentication" --path /path/to/my-project
 # Interactive exploration across all projects
 sanguine search -i
 >> user management
->> login handler --path my-project
+>> "login handler" --path my-project
 >> :q
 
 # Clean up old code references
-sanguine delete --path old-code --yes
+sanguine delete --path old-code
 
 # Maintain index health
 sanguine refresh
@@ -288,14 +309,17 @@ sanguine refresh
 ## Troubleshooting
 
 ### "Not a git repository" error
+
 Make sure you're in a Git repository directory when running `sanguine install` or `sanguine index` (without flags).
 
 ### Search returns no results
+
 - Make sure you've indexed your code first with `sanguine index --all-files`
 - Check if the files you're looking for are in a supported language
 - Try broader search terms
 
 ### Hook not working after commit
+
 - Verify the hook is installed: `ls .git/hooks/post-commit`
 - Try reinstalling: `sanguine uninstall` then `sanguine install`
 - Make sure Python is accessible from your Git environment
@@ -305,4 +329,4 @@ Make sure you're in a Git repository directory when running `sanguine install` o
 - **Report Issues**: https://github.com/n1teshy/sanguine/issues
 - **Questions**: Open a GitHub issue
 
-*Keep your codebase searchable. Keep it D.R.Y with Sanguine.*
+_Keep your codebase searchable. Keep it D.R.Y with Sanguine._
