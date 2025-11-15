@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 
 import sanguine.constants as c
@@ -37,6 +38,9 @@ def main():
     )
     subparsers.add_parser(
         "uninstall", help="Uninstall post-commit hook", parents=[global_parser]
+    )
+    subparsers.add_parser(
+        "ls", help="List indexed repositories", parents=[global_parser]
     )
 
     index_parser = subparsers.add_parser(
@@ -138,20 +142,29 @@ def main():
         search,
     )
     from sanguine.db.hnsw import (
-        init_embedder,
+        indices_dir,
+        init_hnsw,
         refresh_hnsw_index,
         save_indices,
     )
-
-    init_embedder(use_cuda=args.cuda)
+    from sanguine.utils import decode_path
 
     if args.command == "install":
         install()
+        return
 
-    elif args.command == "uninstall":
+    if args.command == "uninstall":
         uninstall()
+        return
 
-    elif args.command == "index":
+    if args.command == "ls":
+        for path in os.listdir(indices_dir):
+            print(decode_path(path))
+        return
+
+    init_hnsw(use_cuda=args.cuda)
+
+    if args.command == "index":
         if args.file:
             index_file(args.file)
         elif args.all_files:
@@ -160,8 +173,9 @@ def main():
             process_commit(args.commit_id)
 
         save_indices()
+        return
 
-    elif args.command == "search":
+    if args.command == "search":
         if not args.interactive:
             if not args.text:
                 print("Search text is required unless using --interactive")
@@ -180,19 +194,23 @@ def main():
             search(
                 kwargs.text, k=kwargs.count, path=kwargs.path, type=kwargs.type
             )
+        return
 
-    elif args.command == "delete":
+    if args.command == "delete":
         if not args.name and not args.path:
             print(
                 f"{Fore.RED}Error: You must provide at least --name or --path for deletion.{Style.RESET_ALL}"
             )
             sys.exit(1)
-        delete(name=args.name, path=args.path, type=args.type, force=args.yes)
+        delete(
+            name=args.name, path=args.path, type=args.type, confirmed=args.yes
+        )
         save_indices()
+        return
 
-    elif args.command == "refresh":
+    if args.command == "refresh":
         refresh_hnsw_index()
+        return
 
-    else:
-        parser.print_help()
-        sys.exit(1)
+    parser.print_help()
+    sys.exit(1)

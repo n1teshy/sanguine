@@ -15,20 +15,11 @@ model: Union[None, TextEmbedding] = None
 indices_dir = os.path.join(app_dir, "indices")
 indices = {}
 
-
-if os.path.isdir(indices_dir):
-    for index_file in os.listdir(indices_dir):
-        index = hnswlib.Index(space="cosine", dim=dim)
-        index_file = os.path.join(indices_dir, index_file)
-        encoded_repo_path = os.path.splitext(os.path.basename(index_file))[0]
-        index.load_index(index_file)
-        norm_repo_path = decode_path(encoded_repo_path)
-        indices[norm_repo_path] = index
-else:
+if not os.path.isdir(indices_dir):
     os.makedirs(indices_dir)
 
 
-def init_embedder(use_cuda: bool):
+def init_hnsw(use_cuda: bool):
     global model
 
     providers = ["CPUExecutionProvider"]
@@ -39,6 +30,14 @@ def init_embedder(use_cuda: bool):
         model_name="sentence-transformers/all-MiniLM-L6-v2",
         providers=providers,
     )
+
+    for index_file in os.listdir(indices_dir):
+        index = hnswlib.Index(space="cosine", dim=dim)
+        index_file = os.path.join(indices_dir, index_file)
+        encoded_repo_path = os.path.splitext(os.path.basename(index_file))[0]
+        index.load_index(index_file)
+        norm_repo_path = decode_path(encoded_repo_path)
+        indices[norm_repo_path] = index
 
 
 def make_hnsw_index(repo_path: str) -> hnswlib.Index:
@@ -90,6 +89,12 @@ def hnsw_remove_symbol(id: int, index: Optional[hnswlib.Index] = None):
     if index is None:
         return
     index.mark_deleted(id)
+
+
+def hnsw_remove_repo(path: str):
+    if path in indices:
+        del indices[path]
+    os.remove(os.path.join(indices_dir, f"{encode_path(path)}.bin"))
 
 
 def refresh_hnsw_index(batch_size: int = 512):

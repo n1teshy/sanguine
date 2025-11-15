@@ -127,6 +127,12 @@ sanguine index --file src/main.py
 sanguine index --all-files
 ```
 
+**List indexed repositories**:
+
+```bash
+sanguine ls
+```
+
 #### `search`
 
 Search indexed code entities (functions and classes).

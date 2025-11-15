@@ -16,6 +16,7 @@ from sanguine.db import db
 from sanguine.db.fts import (
     CodeEntity,
     fts_add_symbol,
+    fts_remove_repo,
     fts_remove_symbol,
     id_to_type,
     type_to_id,
@@ -23,6 +24,7 @@ from sanguine.db.fts import (
 from sanguine.db.hnsw import (
     find_apt_hnsw_index,
     hnsw_add_symbol,
+    hnsw_remove_repo,
     hnsw_remove_symbol,
     hnsw_search,
     make_hnsw_index,
@@ -31,6 +33,8 @@ from sanguine.db.hnsw import indices as hnsw_indices
 from sanguine.parser import extract_symbols
 from sanguine.state import get_staleness, update_staleness
 from sanguine.utils import ext_to_lang, is_repo, normalize_path
+
+# ------------------------ indexing ------------------------
 
 
 def index_diff(file_diff: dict[str, tuple[str, Optional[str]]], dir: str):
@@ -145,6 +149,9 @@ def index_all_files():
     index_diff(file_diff, cwd)
 
 
+# ------------------------ search ------------------------
+
+
 def search(
     query: str,
     k: int,
@@ -162,13 +169,16 @@ def search(
 
     conditions = reduce(lambda x, y: x & y, conditions)
     fts_objects = CodeEntity.select().where(conditions)
-    db_map = {o.id: o for o in fts_objects}
+    fts_id_to_obj = {o.id: o for o in fts_objects}
 
     if path is None:
         # search all indices
         searchable_indices = hnsw_indices
     else:
-        searchable_indices = {path: find_apt_hnsw_index(path)}
+        searchable_indices = {}
+        apt_index = find_apt_hnsw_index(path)
+        if apt_index is not None:
+            searchable_indices = {path: apt_index}
 
     total_hnsw_records, stale_hnsw_records = 0, 0
     sim_ids, sim_scores = [], []
@@ -184,14 +194,14 @@ def search(
     total_hnsw_records += len(sim_ids)
     id_score_map = dict(zip(sim_ids, sim_scores))
     # non-existent IDs don't appear in 'id_obj_map', not even as None
-    id_obj_map = {
+    hnsw_id_obj_map = {
         o.id: o for o in CodeEntity.select().where(CodeEntity.id.in_(sim_ids))
     }
-    stale_hnsw_records += len(sim_ids) - len(id_obj_map)
+    stale_hnsw_records += len(sim_ids) - len(hnsw_id_obj_map)
 
     # NOTE: why this? stale entries from the hnsw index are removed,
     # might need to get new records from the index to make 'k' records
-    if len(id_obj_map) < k / 2:
+    if len(hnsw_id_obj_map) < k / 2:
         for _, index in searchable_indices.items():
             more_ids, more_scores = hnsw_search(query, index, k * 2)
             sim_ids.extend(more_ids), sim_scores.extend(more_scores)
@@ -213,7 +223,7 @@ def search(
                     stale_hnsw_records += 1
                     continue
                 id_score_map[new_sim_id] = score
-                id_obj_map[new_sim_id] = _id_obj_map[new_sim_id]
+                hnsw_id_obj_map[new_sim_id] = _id_obj_map[new_sim_id]
 
     if total_hnsw_records > 0:
         update_staleness(total_hnsw_records, stale_hnsw_records)
@@ -235,7 +245,7 @@ def search(
     ]
     results = []
     for oid in all_ids:
-        obj = id_obj_map.get(oid) or db_map.get(oid)
+        obj = hnsw_id_obj_map.get(oid) or fts_id_to_obj.get(oid)
         if obj is None or (type is not None and obj.type != type):
             continue
         sim_score = id_score_map.get(oid, 0)
@@ -274,18 +284,37 @@ def search(
     print()
 
 
+# ------------------------ delete ------------------------
+
+
 def delete(
     name: Optional[str] = None,
     path: Optional[str] = None,
     type: Optional[str] = None,
-    force: bool = False,
+    confirmed: bool = False,
 ):
-    conditions = []
-    if name:
-        conditions.append(CodeEntity.name.startswith(name))
     if path:
         path = normalize_path(path)
+    if path and path not in hnsw_indices:
+        print(f"No indexed repository found for {path}.")
+        return
+
+    if path and not (type or name):
+        confirmed = input(
+            f'do you want to remove all entities from "{path}"? (yes/no): '
+        ).strip().lower() in {"yes", "y"}
+        if not confirmed:
+            return
+        fts_remove_repo(path)
+        hnsw_remove_repo(path)
+        print("Deleted.")
+        return
+
+    conditions = []
+    if path:
         conditions.append(CodeEntity.file.startswith(path))
+    if name:
+        conditions.append(CodeEntity.name.startswith(name))
     if type:
         conditions.append(CodeEntity.type == type_to_id[type])
 
@@ -302,35 +331,20 @@ def delete(
         print("No matching entities found for deletion.")
         return
 
-    if force:
-        with db.atomic():
-            for obj in query:
-                deleted_ids = fts_remove_symbol(obj.file, obj.type, obj.name)
-                for _id in deleted_ids:
-                    hnsw_remove_symbol(_id)
-        print(f"{Fore.GREEN}{total_no} entities deleted.{Style.RESET_ALL}")
-        return
-
-    while True:
+    while not confirmed:
         print(
             f"{Fore.YELLOW}Warning: {total_no} entities match the criteria!{Style.RESET_ALL}"
         )
         choice = (
-            input("Type 'yes' or 'y' to delete, 'list' to preview entities: ")
+            input(
+                "Type 'yes' to delete, 'list' to preview entities, anything else to cancel: "
+            )
             .strip()
             .lower()
         )
 
         if choice in {"yes", "y"}:
-            with db.atomic():
-                for obj in query:
-                    deleted_ids = fts_remove_symbol(
-                        obj.file, obj.type, obj.name
-                    )
-                    for _id in deleted_ids:
-                        hnsw_remove_symbol(_id)
-            print(f"{Fore.GREEN}{total_no} entities deleted.{Style.RESET_ALL}")
-            break
+            confirmed = True
 
         elif choice == "list":
             print(
@@ -347,4 +361,11 @@ def delete(
 
         else:
             print("\nDeletion cancelled.")
-            break
+            return
+
+    with db.atomic():
+        for obj in query:
+            deleted_ids = fts_remove_symbol(obj.file, obj.type, obj.name)
+            for _id in deleted_ids:
+                hnsw_remove_symbol(_id)
+    print(f"{Fore.GREEN}{total_no} entities deleted.{Style.RESET_ALL}")

@@ -54,3 +54,7 @@ def fts_remove_symbol(path: str, type: int, name: str) -> list[int]:
     if ids:
         CodeEntity.delete().where(CodeEntity.id.in_(ids)).execute()
     return ids
+
+
+def fts_remove_repo(path: str):
+    CodeEntity.delete().where(CodeEntity.file.startswith(path)).execute()
